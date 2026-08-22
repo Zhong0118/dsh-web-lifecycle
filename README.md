@@ -4,7 +4,9 @@
 
 打开 **设置 → 重启关闭**：
 
-![设置 → 重启关闭](page.png)
+<p align="center">
+  <img src="page.png" alt="设置 → 重启关闭" width="920" />
+</p>
 
 页面只做三件事：看状态、重启、关闭。
 
