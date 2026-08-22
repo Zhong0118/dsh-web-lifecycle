@@ -1,0 +1,4 @@
+# Insert the web-lifecycle plugin into the web profile roster.
+- insert:
+    - id: web-lifecycle
+      name: 'dsh-web-lifecycle'
