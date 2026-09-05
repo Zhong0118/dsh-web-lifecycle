@@ -14,12 +14,6 @@ declare module '@deepseek-ai/cordis' {
     }
     cmdlineArgs?: { get(): readonly string[] }
     appExit?: (code: number) => void
-  }
-}
-
-declare module '@deepseek-ai/dsh-client-runtime/client' {
-  export interface ClientContext {
-    effect(setup: () => void | (() => void), name?: string): void
     locale: {
       register(ns: string, dictionaries: Record<string, Record<string, string>>): () => void
       bind(ns: string): (key: string) => string

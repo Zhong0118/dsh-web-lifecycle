@@ -3,7 +3,12 @@ export declare function versionFromManifest(manifest: {
     version?: string;
 }): string | undefined;
 /**
- * DSH product version of the running process — never this plugin's version.
- * Recorded once from the installed DSH packages / launcher package.json.
+ * Locate `@deepseek-ai/dsh/package.json` from the running process.
+ * `process.argv[1]` is often the `bin/dsh` symlink; we realpath it first so
+ * the walk lands in the CLI package instead of Node's `bin/` directory.
  */
-export declare function readDshVersion(): string;
+export declare function findDshManifest(files: readonly string[]): string | undefined;
+/**
+ * DSH CLI version (`dsh --version`) — never this plugin's version.
+ */
+export declare function readDshVersion(files?: readonly string[]): string;
