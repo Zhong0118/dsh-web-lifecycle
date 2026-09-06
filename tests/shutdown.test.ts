@@ -21,16 +21,17 @@ test('shutdown accepts first, then appExit on the next tick — never exit befor
   assert.deepEqual(events, ['scheduled', 'exit:0'])
 })
 
-test('does not schedule appExit until the HTTP response has finished flushing', async () => {
+test('does not schedule appExit until the HTTP socket has closed', async () => {
   const events: string[] = []
   scheduleExitAfterResponse(
     {
       writableFinished: false,
+      destroyed: false,
       once(event, listener) {
         events.push(`once:${event}`)
-        if (event === 'finish') {
+        if (event === 'close') {
           queueMicrotask(() => {
-            events.push('finish')
+            events.push('close')
             listener()
           })
         }
@@ -46,10 +47,10 @@ test('does not schedule appExit until the HTTP response has finished flushing', 
       },
     },
   )
-  assert.deepEqual(events, ['once:finish'])
+  assert.deepEqual(events, ['once:close'])
   await Promise.resolve()
   await Promise.resolve()
-  assert.deepEqual(events, ['once:finish', 'finish', 'scheduled', 'exit:0'])
+  assert.deepEqual(events, ['once:close', 'close', 'scheduled', 'exit:0'])
 })
 
 test('cross-site Origin is rejected so a foreign page cannot shut DSH down', () => {

@@ -22,11 +22,17 @@ export function refuseUnlessTrusted(req: IncomingMessage, res: ServerResponse): 
   return false
 }
 
-export function sendJson(res: ServerResponse, status: number, body: unknown): void {
+export function sendJson(
+  res: ServerResponse,
+  status: number,
+  body: unknown,
+  extraHeaders: Record<string, string> = {},
+): void {
   const payload = JSON.stringify(body)
   res.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
+    ...extraHeaders,
   })
   res.end(payload)
 }

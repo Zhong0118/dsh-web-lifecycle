@@ -38,20 +38,16 @@ async function fetchStatus(signal?: AbortSignal): Promise<ServiceStatusView> {
   return (await response.json()) as ServiceStatusView
 }
 
-async function postAction(path: string): Promise<void> {
-  try {
-    const response = await fetch(path, {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'content-type': 'application/json' },
-      body: '{}',
-    })
-    if (!response.ok) throw new Error(`status ${response.status}`)
-  } catch (error) {
-    // The process may close the socket after accepting the action. Treat a
-    // dropped connection as success; a real HTTP error still fails above.
-    if (error instanceof Error && error.message.startsWith('status ')) throw error
-  }
+function postAction(path: string): void {
+  void fetch(path, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'content-type': 'application/json' },
+    body: '{}',
+    keepalive: true,
+  }).catch(() => {
+    // The process is exiting; the UI already moved to the accepted state.
+  })
 }
 
 function portModeLabel(mode: ServiceStatusView['portMode'], t: ServicePageProps['t']): string {
@@ -129,30 +125,20 @@ export function ServicePage(props: ServicePageProps): ReactElement {
     }
   }, [phase, t])
 
-  const runRestart = async () => {
+  const runRestart = () => {
     setConfirm(null)
     setBusy(true)
     setError(undefined)
-    try {
-      await postAction(RESTART_PATH)
-      setPhase('restarting')
-    } catch {
-      setError(t('error'))
-      setBusy(false)
-    }
+    setPhase('restarting')
+    postAction(RESTART_PATH)
   }
 
-  const runShutdown = async () => {
+  const runShutdown = () => {
     setConfirm(null)
     setBusy(true)
     setError(undefined)
-    try {
-      await postAction(SHUTDOWN_PATH)
-      setPhase('stopped')
-    } catch {
-      setError(t('error'))
-      setBusy(false)
-    }
+    setPhase('stopped')
+    postAction(SHUTDOWN_PATH)
   }
 
   if (phase === 'stopped') {
@@ -241,11 +227,11 @@ export function ServicePage(props: ServicePageProps): ReactElement {
                 {t('cancel')}
               </button>
               {confirm === 'restart' ? (
-                <button type="button" className={styles.primary} onClick={() => void runRestart()}>
+                <button type="button" className={styles.primary} onClick={runRestart}>
                   {t('restart')}
                 </button>
               ) : (
-                <button type="button" className={styles.danger} onClick={() => void runShutdown()}>
+                <button type="button" className={styles.danger} onClick={runShutdown}>
                   {t('shutdown')}
                 </button>
               )}

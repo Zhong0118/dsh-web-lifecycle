@@ -46,7 +46,7 @@ function handleShutdown(ctx: Context, req: IncomingMessage, res: ServerResponse)
     sendJson(res, 500, { error: 'appExit is unavailable' })
     return
   }
-  sendJson(res, 202, { accepted: true })
+  sendJson(res, 202, { accepted: true }, { connection: 'close' })
   scheduleExitAfterResponse(res, {
     appExit,
     schedule: (fn) => {
@@ -80,7 +80,7 @@ function handleRestart(ctx: Context, req: IncomingMessage, res: ServerResponse):
     sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) })
     return
   }
-  sendJson(res, 202, { accepted: true })
+  sendJson(res, 202, { accepted: true }, { connection: 'close' })
   scheduleExitAfterResponse(res, {
     appExit,
     schedule: (fn) => {
