@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
-import { requestShutdown } from './lifecycle.ts'
+import { scheduleExitAfterResponse } from './lifecycle.ts'
 import { sendJson, methodNotAllowed, refuseUnlessTrusted, STATUS_PATH, RESTART_PATH, SHUTDOWN_PATH } from './http.ts'
 import { spawnRestartHelper } from './spawn-helper.ts'
 import { collectServiceStatus } from './status.ts'
@@ -46,13 +46,13 @@ function handleShutdown(ctx: Context, req: IncomingMessage, res: ServerResponse)
     sendJson(res, 500, { error: 'appExit is unavailable' })
     return
   }
-  const accepted = requestShutdown({
+  sendJson(res, 202, { accepted: true })
+  scheduleExitAfterResponse(res, {
     appExit,
     schedule: (fn) => {
       setImmediate(fn)
     },
   })
-  sendJson(res, 202, accepted)
 }
 
 function handleRestart(ctx: Context, req: IncomingMessage, res: ServerResponse): void {
@@ -80,13 +80,13 @@ function handleRestart(ctx: Context, req: IncomingMessage, res: ServerResponse):
     sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) })
     return
   }
-  requestShutdown({
+  sendJson(res, 202, { accepted: true })
+  scheduleExitAfterResponse(res, {
     appExit,
     schedule: (fn) => {
       setImmediate(fn)
     },
   })
-  sendJson(res, 202, { accepted: true })
 }
 
 export function apply(ctx: Context): void {

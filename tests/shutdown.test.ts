@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { requestShutdown } from '../src/lifecycle.ts'
+import { requestShutdown, scheduleExitAfterResponse } from '../src/lifecycle.ts'
 import { isTrustedLifecycleRequest } from '../src/trust.ts'
 
 test('shutdown accepts first, then appExit on the next tick — never exit before the response', () => {
@@ -19,6 +19,37 @@ test('shutdown accepts first, then appExit on the next tick — never exit befor
   assert.deepEqual(events, ['scheduled'])
   scheduled?.()
   assert.deepEqual(events, ['scheduled', 'exit:0'])
+})
+
+test('does not schedule appExit until the HTTP response has finished flushing', async () => {
+  const events: string[] = []
+  scheduleExitAfterResponse(
+    {
+      writableFinished: false,
+      once(event, listener) {
+        events.push(`once:${event}`)
+        if (event === 'finish') {
+          queueMicrotask(() => {
+            events.push('finish')
+            listener()
+          })
+        }
+      },
+    },
+    {
+      appExit: (code) => {
+        events.push(`exit:${code}`)
+      },
+      schedule: (fn) => {
+        events.push('scheduled')
+        fn()
+      },
+    },
+  )
+  assert.deepEqual(events, ['once:finish'])
+  await Promise.resolve()
+  await Promise.resolve()
+  assert.deepEqual(events, ['once:finish', 'finish', 'scheduled', 'exit:0'])
 })
 
 test('cross-site Origin is rejected so a foreign page cannot shut DSH down', () => {

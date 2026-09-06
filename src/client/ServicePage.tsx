@@ -39,13 +39,19 @@ async function fetchStatus(signal?: AbortSignal): Promise<ServiceStatusView> {
 }
 
 async function postAction(path: string): Promise<void> {
-  const response = await fetch(path, {
-    method: 'POST',
-    credentials: 'same-origin',
-    headers: { 'content-type': 'application/json' },
-    body: '{}',
-  })
-  if (!response.ok) throw new Error(`status ${response.status}`)
+  try {
+    const response = await fetch(path, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+    })
+    if (!response.ok) throw new Error(`status ${response.status}`)
+  } catch (error) {
+    // The process may close the socket after accepting the action. Treat a
+    // dropped connection as success; a real HTTP error still fails above.
+    if (error instanceof Error && error.message.startsWith('status ')) throw error
+  }
 }
 
 function portModeLabel(mode: ServiceStatusView['portMode'], t: ServicePageProps['t']): string {

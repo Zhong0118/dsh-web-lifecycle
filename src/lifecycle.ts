@@ -17,3 +17,24 @@ export function requestShutdown(hooks: ShutdownHooks): ShutdownRequest {
   })
   return { accepted: true }
 }
+
+export interface FlushableResponse {
+  writableFinished?: boolean
+  once(event: 'finish', listener: () => void): void
+}
+
+/**
+ * Wait until Node has flushed the HTTP response, then request exit.
+ * `res.end()` plus `setImmediate` is not enough under gzip: compression
+ * finishes on a later tick, and `appExit` would close the socket first.
+ */
+export function scheduleExitAfterResponse(res: FlushableResponse, hooks: ShutdownHooks): void {
+  const exit = () => {
+    requestShutdown(hooks)
+  }
+  if (res.writableFinished === true) {
+    exit()
+    return
+  }
+  res.once('finish', exit)
+}
